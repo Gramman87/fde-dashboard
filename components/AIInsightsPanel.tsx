@@ -43,7 +43,8 @@ export default function AIInsightsPanel() {
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-indigo-600" />
           <h3 className="text-sm font-semibold text-gray-700">AI Insights</h3>
-          <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Claude</span>
+          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Mock</span>
+          <span className="text-xs text-gray-400" title="Simulated responses — would use Claude API in production">· simulated</span>
         </div>
         <button
           onClick={fetchInsights}
@@ -62,7 +63,7 @@ export default function AIInsightsPanel() {
       )}
 
       {error && (
-        <p className="text-sm text-red-500">Failed to load insights. Check your API key.</p>
+        <p className="text-sm text-red-500">Failed to load insights.</p>
       )}
 
       {!loading && !error && (
