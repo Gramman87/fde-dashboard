@@ -1,46 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { summaryForAI } from "@/lib/mockData";
 
-const RESPONSES: Record<string, string> = {
-  default:
-    "Based on current metrics, MRR is up 54% over 7 months to $482K with churn declining to 2.1%. Expansion revenue (2.3%) now exceeds churn, meaning the business is in net negative churn territory — a strong signal of product stickiness.",
-  churn:
-    "Churn dropped from 3.1% to 2.1% over 7 months, saving roughly $48K in monthly recurring revenue. The primary risk is Hooli (actively churning, $12.3K MRR) and Initech (at-risk, $18.9K MRR) — together representing $31.2K in potential monthly churn.",
-  segment:
-    "Enterprise accounts (52% of revenue) are the core growth driver, followed by Mid-Market at 31%. SMB at 17% likely has the highest churn concentration — consider tiered support to reduce SMB attrition and improve LTV.",
-  dau:
-    "DAU/MAU ratio sits at 31.2%, up from roughly 27.9% in November. This upward trend indicates improving daily habit formation. Crossing 40% DAU/MAU would place the product in the top tier of SaaS engagement benchmarks.",
-  accounts:
-    "Acme Corp ($28.4K MRR) and Globex ($22.1K MRR) are healthy and candidates for upsell. Initech needs urgent CSM outreach — at-risk accounts with 280+ seats often churn in clusters. Prioritize Hooli retention this week.",
-};
+const SYSTEM_PROMPT = `You are a SaaS analytics assistant answering questions about Acme Corp's business metrics. Be concise and specific — cite real numbers, account names, and trends. Recommend a next step when relevant. Use only the data provided; do not invent figures.
 
-function pickResponse(question: string): string {
-  const q = question.toLowerCase();
-  if (q.includes("churn") || q.includes("spike") || q.includes("losing")) return RESPONSES.churn;
-  if (q.includes("segment") || q.includes("mrr") || q.includes("revenue") || q.includes("drive")) return RESPONSES.segment;
-  if (q.includes("dau") || q.includes("mau") || q.includes("engagement") || q.includes("trend")) return RESPONSES.dau;
-  if (q.includes("account") || q.includes("attention") || q.includes("risk") || q.includes("customer")) return RESPONSES.accounts;
-  return RESPONSES.default;
-}
+Data:
+${JSON.stringify(summaryForAI, null, 2)}`;
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return new Response("ANTHROPIC_API_KEY not configured", { status: 500 });
+  }
+
   const { question } = await req.json();
-  const response = pickResponse(question);
+  if (!question?.trim()) {
+    return new Response("No question provided", { status: 400 });
+  }
 
-  // Stream the response word-by-word for realistic effect
+  const client = new Anthropic({ apiKey });
+  const stream = client.messages.stream({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 512,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: question }],
+  });
+
   const encoder = new TextEncoder();
-  const words = response.split(" ");
-
   const readable = new ReadableStream({
     async start(controller) {
-      for (const word of words) {
-        controller.enqueue(encoder.encode(word + " "));
-        await new Promise((r) => setTimeout(r, 30));
+      try {
+        for await (const event of stream) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
       }
-      controller.close();
     },
   });
 
-  return new NextResponse(readable, {
+  return new Response(readable, {
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
 }

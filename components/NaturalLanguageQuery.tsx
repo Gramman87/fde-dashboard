@@ -60,8 +60,7 @@ export default function NaturalLanguageQuery() {
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-4 h-4 text-indigo-600" />
         <h3 className="text-sm font-semibold text-gray-700">Ask Your Data</h3>
-        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Mock</span>
-        <span className="text-xs text-gray-400" title="Keyword-matched responses — would stream from Claude API in production">· simulated</span>
+        <span className="text-xs text-gray-400">· streamed from Claude</span>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-3">
