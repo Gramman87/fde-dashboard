@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { summaryForAI } from "@/lib/mockData";
 
-const SYSTEM_PROMPT = `You are a SaaS analytics assistant answering questions about Acme Corp's business metrics. Be concise and specific — cite real numbers, account names, and trends. Recommend a next step when relevant. Use only the data provided; do not invent figures.
+const SYSTEM_PROMPT = `You are a SaaS analytics assistant answering questions about Nimbus Cloud's business metrics. Be concise and specific — cite real numbers, account names, and trends. Recommend a next step when relevant. Use only the data provided; do not invent figures.
 
 Data:
 ${JSON.stringify(summaryForAI, null, 2)}`;
