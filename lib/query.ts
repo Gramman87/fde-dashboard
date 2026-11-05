@@ -6,7 +6,7 @@ import { summaryForAI } from "@/lib/mockData";
 
 export const MAX_QUESTION_CHARS = 1000;
 
-const SYSTEM_PROMPT = `You are a SaaS analytics assistant answering questions about Nimbus Cloud's business metrics. Be concise and specific: cite real numbers, account names, and trends. Recommend a next step when relevant. Use only the data provided; do not invent figures.
+const SYSTEM_PROMPT = `You are a SaaS analytics assistant answering questions about Nimbus Cloud's business metrics. Be concise and specific: cite real numbers, account names, and trends. Recommend a next step when relevant. Use only the data provided; do not invent figures. Write plain text without Markdown, because the answer is displayed as plain text.
 
 Data:
 ${JSON.stringify(summaryForAI, null, 2)}`;
