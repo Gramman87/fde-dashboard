@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { MessageSquare, Send, Loader2 } from "lucide-react";
 
 const SUGGESTIONS = [
-  "Why is churn spiking?",
+  "How is churn trending?",
   "Which segment drives the most MRR?",
   "What's the DAU/MAU trend telling us?",
   "Which accounts need attention?",
@@ -14,39 +14,54 @@ export default function NaturalLanguageQuery() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [engine, setEngine] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const ask = async (q: string) => {
     if (!q.trim()) return;
-    if (abortRef.current) abortRef.current.abort();
-    abortRef.current = new AbortController();
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     setLoading(true);
     setAnswer("");
+    setEngine(null);
+    setNotice(null);
 
     try {
       const res = await fetch("/api/query", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q }),
-        signal: abortRef.current.signal,
+        signal: controller.signal,
       });
 
+      if (!res.ok) {
+        setAnswer((await res.text()) || "Error fetching response.");
+        return;
+      }
+      setEngine(res.headers.get("X-Engine"));
+      setNotice(res.headers.get("X-Notice"));
+
       const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
       if (!reader) return;
+      const decoder = new TextDecoder();
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        setAnswer((prev) => prev + decoder.decode(value));
+        // stream: true keeps a multi-byte character split across chunks intact.
+        setAnswer((prev) => prev + decoder.decode(value, { stream: true }));
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {
-        setAnswer("Error fetching response.");
+        // Keep whatever already arrived.
+        setAnswer((prev) => (prev ? `${prev}\n\n(Connection lost.)` : "Error fetching response."));
       }
     } finally {
-      setLoading(false);
+      // A newer question may already be running, and it owns the spinner now.
+      if (abortRef.current === controller) setLoading(false);
     }
   };
 
@@ -60,7 +75,11 @@ export default function NaturalLanguageQuery() {
       <div className="flex items-center gap-2 mb-4">
         <MessageSquare className="w-4 h-4 text-violet-400" />
         <h3 className="text-sm font-semibold text-gray-300">Ask Your Data</h3>
-        <span className="text-xs text-gray-600">· streamed from Claude</span>
+        {engine && (
+          <span className="text-xs text-gray-600">
+            · {engine === "claude" ? "streamed from Claude" : "rule-based demo"}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 mb-3">
@@ -95,6 +114,8 @@ export default function NaturalLanguageQuery() {
           )}
         </button>
       </form>
+
+      {notice && <p className="mt-3 text-xs text-amber-300/80">{notice}</p>}
 
       {answer && (
         <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
