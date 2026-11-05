@@ -1,20 +1,5 @@
-// Nimbus Cloud — a fictional B2B SaaS used as the dashboard's tenant.
-// Distinct from the MCP demo dataset so the two POCs don't share data.
-
-export const kpis = {
-  mrr: 561000,
-  arr: 6732000,
-  mrrGrowth: 7.9,
-  churnRate: 2.8,
-  churnDelta: -0.5,
-  dau: 16200,
-  mau: 49800,
-  dauMauRatio: 32.5,
-  ltv: 21400,
-  nps: 58,
-  npsDelta: 5,
-  activeAccounts: 1580,
-};
+// Nimbus Cloud is a fictional B2B SaaS. Everything here is static sample data, and it's kept
+// distinct from the MCP demo dataset so the two projects don't share data.
 
 export const revenueData = [
   { month: "Nov", mrr: 367000, arr: 4404000 },
@@ -46,10 +31,11 @@ export const userGrowthData = [
   { month: "May", dau: 16200, mau: 49800 },
 ];
 
+// Share of MRR by customer segment, in percent.
 export const segmentData = [
-  { name: "Enterprise", value: 56, color: "#8b5cf6" },
-  { name: "Mid-Market", value: 28, color: "#a78bfa" },
-  { name: "SMB", value: 16, color: "#c4b5fd" },
+  { name: "Enterprise", mrrSharePct: 56 },
+  { name: "Mid-Market", mrrSharePct: 28 },
+  { name: "SMB", mrrSharePct: 16 },
 ];
 
 export const topAccounts = [
@@ -59,6 +45,26 @@ export const topAccounts = [
   { name: "Atlas Bio", mrr: 17900, health: "healthy", seats: 240 },
   { name: "Solstice AI", mrr: 13600, health: "churning", seats: 200 },
 ];
+
+const latest = <T,>(series: T[]) => series[series.length - 1];
+const previous = <T,>(series: T[]) => series[series.length - 2];
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+// KPIs that exist in a series are derived from it, so a card can't disagree with its chart.
+export const kpis = {
+  mrr: latest(revenueData).mrr,
+  arr: latest(revenueData).arr,
+  mrrGrowth: round1((latest(revenueData).mrr / previous(revenueData).mrr - 1) * 100),
+  churnRate: latest(churnData).churnRate,
+  churnDelta: round1(latest(churnData).churnRate - previous(churnData).churnRate),
+  dau: latest(userGrowthData).dau,
+  mau: latest(userGrowthData).mau,
+  dauMauRatio: round1((latest(userGrowthData).dau / latest(userGrowthData).mau) * 100),
+  ltv: 21400,
+  nps: 58,
+  npsDelta: 5,
+  activeAccounts: 1580,
+};
 
 export const summaryForAI = {
   company: "Nimbus Cloud",

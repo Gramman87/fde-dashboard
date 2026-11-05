@@ -7,6 +7,8 @@ interface MetricCardProps {
   value: string;
   delta?: string;
   deltaPositive?: boolean;
+  /** Which way the number moved. Falling churn is good news, but it still fell. */
+  deltaDirection?: "up" | "down";
   icon: LucideIcon;
   subtitle?: string;
 }
@@ -16,6 +18,7 @@ export default function MetricCard({
   value,
   delta,
   deltaPositive,
+  deltaDirection = "up",
   icon: Icon,
   subtitle,
 }: MetricCardProps) {
@@ -38,7 +41,7 @@ export default function MetricCard({
               deltaPositive ? "text-emerald-400" : "text-red-400"
             }`}
           >
-            {deltaPositive ? "▲" : "▼"} {delta}
+            {deltaDirection === "up" ? "▲" : "▼"} {delta}
           </span>
           <span className="text-xs text-gray-600">vs last month</span>
         </div>
